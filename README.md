@@ -1,13 +1,13 @@
-## Lab Activity 7 Answers
+## Lab Activity 9 Answers
 
-### Q1. Why does the form use POST instead of GET?
+### F1. Which column did you make nullable, and why?
 
-My form uses POST because it changes the character data. If it used GET, the values would be placed in the URL. When the browser is refreshed, it could repeat the request and save the same character again. POST followed by a redirect avoids that problem.
+I made the `remarks` column nullable because a character can be added even when there is no extra information to write. I did not make the main fields nullable because every character should have a name, element, weapon, rarity, and playable status.
 
-### Q2. What stops the saving code when validation fails?
+### F2. Which step failed first for you, and what did the error say?
 
-The `$request->validate()` method checks the data before the saving code runs. If a rule fails, Laravel automatically redirects back to the form and stores the errors and old input in the session. The method stops at the validation line, so the save method is not reached.
+The first planned failure happened when I tried to create a Character before adding `$fillable`. Laravel gave a mass-assignment error because the model did not yet allow the values to be filled. I fixed it by adding the character columns to `$fillable`.
 
-### Q3. Why does the success message not appear on every page?
+### F3. Why did the pages still work even though you changed no Blade file?
 
-The message is displayed in the shared layout, so the layout can show it on any page. However, `with('success', ...)` creates a flash message that is stored for only the next request. After it is displayed once, Laravel removes it from the session, so it does not appear on every page.
+The Blade files still use the same variable names and character fields. I changed the controller so it supplies those variables from Eloquent instead of the JSON file. Because the data shape stayed the same, the views did not need to change.
