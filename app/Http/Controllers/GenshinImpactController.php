@@ -3,56 +3,39 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Character;
 
 class GenshinImpactController extends Controller
 {
 
-    private function characters(): array
-    {
-        $path = storage_path('app/characters.json');
+   public function index(Request $request)
+{
+    $characters = Character::all();
 
-        return json_decode(file_get_contents($path), true);
-    }
+    $element = $request->query('element', 'all');
+    $rarity = $request->query('rarity', 'all');
 
-    private function saveCharacters(array $characters): void
-    {
-        $path = storage_path('app/characters.json');
-
-        file_put_contents(
-            $path,
-            json_encode($characters, JSON_PRETTY_PRINT)
+    if ($element !== 'all' && $element !== '') {
+        $characters = $characters->filter(
+            fn ($character): bool =>
+                strcasecmp($character->element, $element) === 0
         );
     }
 
-    public function index(Request $request)
-    {
-        $characters = $this->characters();
-
-        $element = $request->query('element', 'all');
-        $rarity = $request->query('rarity', 'all');
-
-        if ($element !== 'all' && $element !== '') {
-            $characters = array_filter(
-                $characters,
-                fn (array $character): bool =>
-                    strcasecmp($character['element'], $element) === 0
-            );
-        }
-
-        if ($rarity !== 'all' && $rarity !== '') {
-            $characters = array_filter(
-                $characters,
-                fn (array $character): bool =>
-                    (string) $character['rarity'] === (string) $rarity
-            );
-        }
-
-        return view('characters.index', [
-            'characters' => $characters,
-            'element' => $element,
-            'rarity' => $rarity,
-        ]);
+    if ($rarity !== 'all' && $rarity !== '') {
+        $characters = $characters->filter(
+            fn ($character): bool =>
+                (string) $character->rarity === (string) $rarity
+        );
     }
+
+    return view('characters.index', [
+        'characters' => $characters,
+        'element' => $element,
+        'rarity' => $rarity,
+    ]);
+}
+
 
     public function create()
     {
@@ -68,36 +51,23 @@ class GenshinImpactController extends Controller
             'rarity' => 'required|numeric|in:4,5',
         ]);
 
-        $characters = $this->characters();
-
-        $nextId = max(array_keys($characters)) + 1;
-
-        $characters[$nextId] = [
-            'id' => $nextId,
-            'name' => $validated['name'],
-            'element' => $validated['element'],
-            'weapon' => $validated['weapon'],
-            'rarity' => (int) $validated['rarity'],
-        ];
-
-        $this->saveCharacters($characters);
+        $character = new Character();
+        $character->name = $validated['name'];
+        $character->element = $validated['element'];
+        $character->weapon = $validated['weapon'];
+        $character->rarity = (int) $validated['rarity'];
+        $character->save();
 
         return redirect()
             ->route('characters.index')
             ->with('success', 'Character added successfully.');
     }
 
-    public function show(int $id)
+    public function show($id)
     {
-        $characters = $this->characters();
+        $character = Character::findOrFail($id);
 
-        if (!isset($characters[$id])) {
-            abort(404);
-        }
-
-        return view('characters.show', [
-            'character' => $characters[$id],
-        ]);
+        return view('characters.show', compact('character'));
     }
 
     public function edit(int $id)
@@ -117,11 +87,9 @@ class GenshinImpactController extends Controller
 
     public function featured()
     {
-        $characters = $this->characters();
+        $character = Character::findOrFail(4);
 
-        return view('characters.featured', [
-            'character' => $characters[4],
-        ]);
+        return view('characters.featured', compact('character'));
     }
 
 }
